@@ -1,0 +1,148 @@
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+:root {
+	font-family: 'Google Sans', 'Hiragino Sans', Arial, sans-serif;
+	font-size: 16px;
+	line-height: 24px;
+	font-weight: 400;
+
+	color: #f6f6f6;
+	background-color: #2f2f2f;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-text-size-adjust: 100%;
+	scrollbar-width: none;
+	scroll-behavior: unset;
+	text-wrap-mode: wrap;
+	text-overflow: ellipsis;
+}
+
+.container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	text-align: center;
+}
+
+.main_tab {
+	position: relative;
+	display: flex;
+	width: 100%;
+	height: 8vh;
+	background: #252525;
+}
+
+.main_tab .btn {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.main_tab .btn.is_active {
+	background-color: #2f2f2f;
+}
+
+.main_tab .indicator {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 33.3%;
+	height: 2px;
+	background: red;
+	transition: transform 0.1s ease;
+}
+
+.main_tab .btn:hover {
+	background-color: #2a2a2a;
+}
+
+.indicator.home {
+	transform: translateX(0%);
+}
+
+.indicator.liveview {
+	transform: translateX(100%);
+}
+
+.indicator.settings {
+	transform: translateX(200%);
+}
+
+a {
+	font-weight: 500;
+	color: #fff;
+	text-decoration: inherit;
+	transition: color 0.3s;
+}
+
+h1 {
+	transition: all 0.5s;
+	text-align: center;
+}
+
+h1:hover {
+	filter: drop-shadow(0 0 0.3em #24c8db);
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+input,
+button {
+	margin-top: 0.25em;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	padding: 0.6em 1.2em;
+	font-size: 1em;
+	font-weight: 500;
+	font-family: inherit;
+	color: #0f0f0f;
+	background-color: #ffffff;
+	transition: border-color 0.25s;
+	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+input,
+a,
+button {
+	outline: none;
+}
+
+input,
+button {
+	color: #ffffff;
+	transition: background-color 0.25s;
+	background-color: #0f0f0f98;
+}
+
+a:hover {
+	color: #24c8db;
+}
+
+button {
+	cursor: pointer;
+}
+
+button:active {
+	border-color: #396cd8;
+	background-color: #0f0f0f69;
+}
+
+button:hover {
+	border-color: #396cd8;
+}
