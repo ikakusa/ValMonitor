@@ -1,6 +1,8 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod riot;
 use riot::ValorantAPI;
+use serde_json;
+use serde_json::Value;
 use std::sync::Arc;
 use std::sync::{Mutex, OnceLock};
 
@@ -9,6 +11,18 @@ static VALORANT_API: OnceLock<Mutex<Arc<ValorantAPI>>> = OnceLock::new();
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+async fn get_player_mmr(uid: String) -> Result<Value, String> {
+    let api = VALORANT_API
+        .get()
+        .expect("Valorant API is not initialized!!!")
+        .lock()
+        .unwrap()
+        .clone();
+
+    api.get_mmr(uid.as_str()).await
 }
 
 #[tauri::command]
@@ -48,53 +62,38 @@ async fn get_auth_userinfo() -> String {
 }
 
 #[tauri::command]
-async fn get_my_presence() -> String {
+async fn get_my_presence() -> Result<Value, String> {
     let api = VALORANT_API
         .get()
         .expect("Valorant API is not initialized!!!")
         .lock()
         .unwrap()
         .clone();
-    match api.get_my_presence().await {
-        Ok(json) => return String::from(serde_json::to_string(&json).unwrap()),
-        Err(_err) => {
-            return String::from("Invalid Json");
-        }
-    }
+    api.get_my_presence().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_private_presence() -> String {
+async fn get_private_presence() -> Result<Value, String> {
     let api = VALORANT_API
         .get()
         .expect("Valorant API is not initialized!!!")
         .lock()
         .unwrap()
         .clone();
-    match api.get_private_presence().await {
-        Ok(json) => json.to_string(),
-        Err(_err) => {
-            return String::from("Invalid Json");
-        }
-    }
+    api.get_private_presence().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_gamestate() -> String {
+async fn get_gamestate() -> Result<String, String> {
     let api = VALORANT_API
         .get()
         .expect("Valorant API is not initialized!!!")
         .lock()
         .unwrap()
         .clone();
-    match api.get_gamestate().await {
-        Ok(json) => return json,
-        Err(_err) => {
-            return String::from("NONE");
-        }
-    }
-}
 
+    api.get_gamestate().await.map_err(|e| e.to_string())
+}
 #[tauri::command]
 async fn is_api_initialized() -> bool {
     let api = VALORANT_API
@@ -115,7 +114,11 @@ async fn get_full_username() -> String {
         .unwrap()
         .clone();
 
-    return format!("{}#{}", *api.name.lock().unwrap(), *api.tag_line.lock().unwrap());
+    return format!(
+        "{}#{}",
+        *api.name.lock().unwrap(),
+        *api.tag_line.lock().unwrap()
+    );
 }
 
 #[tauri::command]
@@ -128,6 +131,30 @@ async fn get_puuid() -> String {
         .clone();
 
     return api.puuid.lock().unwrap().clone();
+}
+
+#[tauri::command]
+async fn get_playercard_by_id(id: String) -> Result<Value, String> {
+    let api = VALORANT_API
+        .get()
+        .expect("Valorant API is not initialized!!!")
+        .lock()
+        .unwrap()
+        .clone();
+
+    api.get_playercard_by_id(id).await
+}
+
+#[tauri::command]
+async fn get_region() -> Result<String, String> {
+    let api = VALORANT_API
+        .get()
+        .expect("Valorant API is not initialized!!!")
+        .lock()
+        .unwrap()
+        .clone();
+
+    api.get_region().await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -152,7 +179,10 @@ pub fn run() {
             get_gamestate,
             is_api_initialized,
             get_puuid,
-            get_full_username
+            get_full_username,
+            get_playercard_by_id,
+            get_region,
+            get_player_mmr
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

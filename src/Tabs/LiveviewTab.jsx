@@ -6,7 +6,9 @@ import { AppContext } from "../AppContext";
 function LiveviewTab() {
     const { appData, setAppData } = useContext(AppContext);
     return (
-        <div className="liveview_container"></div>
+        <div className="liveview_container">
+            <h1>何見てんだおめえ</h1>
+        </div>
     );
 }
 

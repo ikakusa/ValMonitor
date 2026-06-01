@@ -6,7 +6,9 @@ import { AppContext } from "../AppContext";
 function SettingsTab() {
     const { appData, setAppData } = useContext(AppContext);
     return (
-        <div className="settings_container"></div>
+        <div className="settings_container">
+            <h1>こっちみんな</h1>
+        </div>
     );
 }
 

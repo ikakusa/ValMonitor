@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
+use once_cell::sync::Lazy;
 use reqwest;
 use reqwest::Client;
 use serde_json::json;
@@ -40,13 +41,96 @@ pub struct ValorantAPI {
     pvp_initialized_notify: Notify,
 }
 
+static VAL_ASSET_CLIENT: Lazy<Client> = Lazy::new(|| {
+    Client::builder()
+        .user_agent("ValMonitor")
+        .build()
+        .expect("failed to build client")
+});
+
 impl ValorantAPI {
+    pub async fn get_playercard_by_id(&self, id: String) -> Result<Value, String> {
+        let res = VAL_ASSET_CLIENT
+            .get(format!("https://valorant-api.com/v1/playercards/{}", id))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let json: Value = res.json().await.map_err(|e| e.to_string())?;
+
+        Ok(json["data"].clone())
+    }
     pub async fn is_initialized(&self) -> bool {
         return self.pvp_initialized.load(Ordering::Acquire);
     }
+
+    // pvp endpoint
+    pub async fn get_mmr(&self, puuid: &str) -> Result<Value, String> {
+        self.get_pvp_request(format!("/mmr/v1/players/{puuid}").as_str())
+            .await
+    }
+    pub async fn get_pvp_request(&self, path: &str) -> Result<Value, String> {
+        while !self.pvp_initialized.load(Ordering::Acquire) {
+            self.pvp_initialized_notify.notified().await;
+        }
+
+        loop {
+            let client = self.pvp_client.lock().unwrap().clone();
+            let region = self.get_region().await?;
+
+            match client
+                .get(format!("https://pd.{}.a.pvp.net{}", region, path))
+                .send()
+                .await
+            {
+                Ok(response) => match response.json::<Value>().await {
+                    Ok(json) => {
+                        if json["errorCode"].as_number().is_some() {
+                            self.build_pvp_client().await;
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                            continue;
+                        } else {
+                            return Ok(json);
+                        }
+                    }
+                    Err(_) => return Err("Failed to get json".to_string()),
+                },
+                Err(_) => return Err("Failed to send request".to_string()),
+            }
+        }
+    }
+    //
+
     // local endpoint
     pub async fn get_presence(&self) -> Result<Value, String> {
         self.get_local_request("/chat/v4/presences").await
+    }
+
+    pub async fn get_region(&self) -> Result<String, String> {
+        let json = self
+            .get_local_request("/product-session/v1/external-sessions")
+            .await?;
+
+        let region_key = json
+            .as_object()
+            .ok_or("Invalid response")?
+            .keys()
+            .find(|key| *key != "host_app")
+            .ok_or("Region key not found")?
+            .to_string();
+
+        let arguments = json[&region_key]["launchConfiguration"]["arguments"]
+            .as_array()
+            .ok_or("Arguments not found")?;
+
+        let arg = arguments
+            .get(4)
+            .and_then(|v| v.as_str())
+            .ok_or("Region argument not found")?;
+
+        let region = arg.split('=').nth(1).ok_or("Invalid region format")?;
+
+        Ok(region.to_string())
     }
 
     pub async fn get_my_presence(&self) -> Result<Value, String> {
@@ -106,7 +190,7 @@ impl ValorantAPI {
                     .as_str()
                     .unwrap(),
             )),
-            Err(_err) => Err(String::from("Invalid Json")),
+            Err(_err) => Ok(String::from("IDLE")),
         }
     }
 
@@ -130,13 +214,15 @@ impl ValorantAPI {
             .send()
             .await
         {
-            Ok(response) => match response.json::<Value>().await {
-                Ok(json) => {
-                    // println!("{}", json);
-                    Ok(json)
+            Ok(response) => {
+                match response.json::<Value>().await {
+                    Ok(json) => {
+                        // println!("{}", json);
+                        Ok(json)
+                    }
+                    Err(_error) => Err(String::from("Failed to get json")),
                 }
-                Err(_error) => Err(String::from("Failed to get json")),
-            },
+            }
             Err(_error) => Err(String::from("Failed to send request")),
         }
     }
@@ -178,6 +264,73 @@ impl ValorantAPI {
         let path = format!(r"{}\Riot Games\Riot Client\Config\lockfile", local_appdata);
 
         fs::read_to_string(&path)
+    }
+
+    async fn build_pvp_client(&self) {
+        let mut pvp_headers = reqwest::header::HeaderMap::new();
+        pvp_headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(
+                format!("Bearer {}", self.access_token.lock().unwrap()).as_str(),
+            )
+            .unwrap(),
+        );
+        pvp_headers.insert(
+            "X-Riot-Entitlements-JWT",
+            reqwest::header::HeaderValue::from_str(
+                self.entitlements_token.lock().unwrap().as_str(),
+            )
+            .unwrap(),
+        );
+
+        pvp_headers.insert(
+                            "X-Riot-ClientPlatform",
+                            reqwest::header::HeaderValue::from_str(
+                                "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9",
+                            )
+                            .unwrap(),
+                        );
+
+        let client_v: String;
+
+        match VAL_ASSET_CLIENT
+            .get("https://valorant-api.com/v1/version")
+            .send()
+            .await
+        {
+            Ok(res) => match res.json::<serde_json::Value>().await {
+                Ok(json) => match json["data"]["riotClientVersion"].as_str() {
+                    Some(version) => {
+                        client_v = version.to_string();
+                    }
+                    None => {
+                        println!("riotClientVersion not found");
+                        return;
+                    }
+                },
+                Err(err) => {
+                    println!("json parse error: {}", err);
+                    return;
+                }
+            },
+            Err(err) => {
+                println!("request error: {}", err);
+                return;
+            }
+        }
+        pvp_headers.insert(
+            "X-Riot-ClientVersion",
+            reqwest::header::HeaderValue::from_str(client_v.as_str()).unwrap(),
+        );
+
+        *self.pvp_client.lock().unwrap() = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .default_headers(pvp_headers)
+            .build()
+            .unwrap();
+
+        self.pvp_initialized.store(true, Ordering::Release);
+        self.pvp_initialized_notify.notify_waiters();
     }
 
     pub fn monitor_lockfile(self: Arc<Self>) {
@@ -302,8 +455,7 @@ impl ValorantAPI {
                         *self.tag_line.lock().unwrap() =
                             userinfo["acct"]["tag_line"].as_str().unwrap().to_string();
 
-                        self.pvp_initialized.store(true, Ordering::Release);
-                        self.pvp_initialized_notify.notify_waiters();
+                        self.build_pvp_client().await;
 
                         println!("[Riot::Monitor] updated headers");
                     }
