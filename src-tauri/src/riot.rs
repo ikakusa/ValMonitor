@@ -83,18 +83,24 @@ impl ValorantAPI {
                 .send()
                 .await
             {
-                Ok(response) => match response.json::<Value>().await {
-                    Ok(json) => {
-                        if json["errorCode"].as_number().is_some() {
-                            self.build_pvp_client().await;
-                            tokio::time::sleep(Duration::from_secs(1)).await;
-                            continue;
-                        } else {
+                Ok(response) => {
+                    let status = response.status();
+                    match response.json::<Value>().await {
+                        Ok(json) => {
+                            if !status.is_success() {
+                                self.build_pvp_client().await;
+                                println!("[ValorantAPI::get_pvp_request] request failed with {} status code: {}\ntrying to build new reqwest client", status.as_u16(), path);
+                                tokio::time::sleep(Duration::from_secs(1)).await;
+                                continue;
+                            }
                             return Ok(json);
                         }
+                        Err(_) => {
+                            self.build_pvp_client().await;
+                            return Err("Failed to get json".to_string());
+                        }
                     }
-                    Err(_) => return Err("Failed to get json".to_string()),
-                },
+                }
                 Err(_) => return Err("Failed to send request".to_string()),
             }
         }

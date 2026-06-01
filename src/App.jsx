@@ -130,7 +130,7 @@ function App() {
             const json = await invoke("get_player_mmr", { uid: appData.puuid });
             console.log(json)
             if (!json["QueueSkills"]) return;
-            // try {
+            try {
                 const all_seasons = competitive_seasons;
                 const now = Date.now();
                 const _current_season = all_seasons.filter(season => {
@@ -143,7 +143,7 @@ function App() {
                 const current_season = _current_season[0];
                 const current_season_id = current_season["uuid"];
                 const current_season_name = current_season["title"];
-            
+
                 const competitive = json["QueueSkills"]["competitive"];
                 const seasons = competitive["SeasonalInfoBySeasonID"];
 
@@ -158,14 +158,14 @@ function App() {
                 const peak_rank_tier = peak_rank["CompetitiveTier"];
                 const peak_rank_icon = appData.ranks[peak_rank_tier]["largeIcon"];
                 const peak_rank_name = appData.ranks[peak_rank_tier]["tierName"];
-                
+
                 const current_rank_tier = current_competitive["CompetitiveTier"];
                 const current_rr = current_competitive["RankedRating"];
                 const current_peak = current_competitive["Rank"];
 
                 const current_rank_name = appData.ranks[current_rank_tier]["tierName"];
                 const current_rank_icon = appData.ranks[current_rank_tier]["largeIcon"];
-                
+
                 const season_peak_rank_name = appData.ranks[current_peak]["tierName"];
                 const season_peak_icon = appData.ranks[current_peak]["largeIcon"];
 
@@ -180,9 +180,9 @@ function App() {
                     current_rank: { tier: current_rank_tier ?? 0, icon: current_rank_icon, name: current_rank_name.charAt(0) + current_rank_name.slice(1).toLowerCase(), rr: current_rr ?? 0 },
                     peak_rank: { season_id: peak_season_id, season_name: peak_season_title, tier: peak_rank_tier ?? 0, icon: peak_rank_icon, name: peak_rank_name.charAt(0) + peak_rank_name.slice(1).toLowerCase() }
                 }));
-            // } catch (e) {
-                // console.log(e)
-            // }
+            } catch (e) {
+                console.log(e)
+            }
         }
 
         get_rank();
