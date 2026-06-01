@@ -97,7 +97,8 @@ impl ValorantAPI {
                         }
                         Err(_) => {
                             self.build_pvp_client().await;
-                            return Err("Failed to get json".to_string());
+                            tokio::time::sleep(Duration::from_secs(3)).await;
+                            continue;
                         }
                     }
                 }
