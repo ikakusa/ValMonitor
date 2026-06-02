@@ -13,16 +13,13 @@
     "windows": [
       {
         "title": "valotracker",
-        "width": 1080,
-        "height": 680,
-        "minWidth": 860,
-        "minHeight": 540,
+        "width": 950,
+        "height": 550,
         "fullscreen": false,
-        "decorations": false,
-        "resizable": true,
+        "resizable": false,
         "devtools": true,
-        "maximizable": true,
-        "alwaysOnTop": false
+        "maximizable": false,
+        "alwaysOnTop": true
       }
     ],
     "security": {
