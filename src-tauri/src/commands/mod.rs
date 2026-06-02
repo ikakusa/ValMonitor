@@ -1,3 +1,3 @@
 pub mod discord;
 pub mod henrik;
-pub mod riot;
+pub mod riot_command;

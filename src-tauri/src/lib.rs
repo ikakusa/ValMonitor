@@ -4,10 +4,10 @@ mod app_config;
 mod commands;
 mod discord_rpc;
 mod errors;
+mod riot;
 mod henrik;
 mod http_log;
 mod models;
-mod riot;
 mod state;
 
 use app_config::ensure_config_dir;
@@ -20,11 +20,6 @@ use commands::henrik::{
     henrik_vlr_event_matches, henrik_vlr_events, henrik_vlr_match, henrik_vlr_player,
     henrik_vlr_player_matches, henrik_vlr_team, henrik_vlr_team_matches,
     henrik_vlr_team_transactions,
-};
-use commands::riot::{
-    get_all_presences, get_auth_userinfo, get_current_match, get_full_username, get_gamestate,
-    get_my_presence, get_player_loadout, get_player_mmr, get_playercard_by_id, get_presence,
-    get_private_presence, get_puuid, get_region, get_storefront, greet, is_api_initialized,
 };
 use log::LevelFilter;
 use state::AppState;
@@ -56,22 +51,21 @@ pub fn run() {
         )
         .manage(state)
         .invoke_handler(tauri::generate_handler![
-            greet,
-            get_presence,
-            get_all_presences,
-            get_my_presence,
-            get_auth_userinfo,
-            get_private_presence,
-            get_gamestate,
-            is_api_initialized,
-            get_puuid,
-            get_full_username,
-            get_playercard_by_id,
-            get_region,
-            get_player_mmr,
-            get_player_loadout,
-            get_storefront,
-            get_current_match,
+            commands::riot_command::get_presence,
+            commands::riot_command::get_all_presences,
+            commands::riot_command::get_my_presence,
+            commands::riot_command::get_auth_userinfo,
+            commands::riot_command::get_private_presence,
+            commands::riot_command::get_gamestate,
+            commands::riot_command::is_api_initialized,
+            commands::riot_command::get_puuid,
+            commands::riot_command::get_full_username,
+            commands::riot_command::get_playercard_by_id,
+            commands::riot_command::get_region,
+            commands::riot_command::get_player_mmr,
+            commands::riot_command::get_player_loadout,
+            commands::riot_command::get_storefront,
+            commands::riot_command::get_current_match,
             henrik_get_settings,
             henrik_save_api_key,
             henrik_account_by_name,

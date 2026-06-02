@@ -11,11 +11,6 @@ use crate::{
 };
 
 #[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
 pub async fn get_player_mmr(
     state: tauri::State<'_, AppState>,
     uid: String,
