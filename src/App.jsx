@@ -30,21 +30,20 @@ function App() {
         current_rank: { tier: 0, icon: null, name: "Unranked" }
     });
 
-    document.addEventListener('contextmenu', function (event) {
-        event.preventDefault();
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (
-            event.key === 'F5' ||
-            (event.ctrlKey && event.key.toLowerCase() === 'r') ||
-            (event.metaKey && event.key.toLowerCase() === 'r')
-        ) {
-            // event.preventDefault();
-        }
-    });
-
     useEffect(() => {
+        document.addEventListener('contextmenu', function (event) {
+            event.preventDefault();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (
+                event.key === 'F5' ||
+                (event.ctrlKey && event.key.toLowerCase() === 'r') ||
+                (event.metaKey && event.key.toLowerCase() === 'r')
+            ) {
+                // event.preventDefault();
+            }
+        });
         async function load_userinfo() {
             await invoke("get_auth_userinfo").then((json) => {
                 setAppData(prev => ({ ...prev, auth_info: json }))
@@ -196,16 +195,70 @@ function App() {
     }
 
     return (
-        <AppContext.Provider
-            value={{ appData, setAppData }}
-        >
-            <main className="container">
-                <div className="main_tab">
-                    <div className={`btn home ${getActivated("home")}`} onClick={() => setAppData(prev => ({ ...prev, current_page: "home" }))}><a>Home</a></div>
-                    <div className={`btn liveview ${getActivated("liveview")}`} onClick={() => setAppData(prev => ({ ...prev, current_page: "liveview" }))}><a>Live view</a></div>
-                    <div className={`btn settings ${getActivated("settings")}`} onClick={() => setAppData(prev => ({ ...prev, current_page: "settings" }))}><a>Settings</a></div>
-                    <div className={`indicator ${appData.current_page}`}></div>
+        <AppContext.Provider value={{ appData, setAppData }}>
+            <main className="flex flex-col justify-center text-center">
+                <div className="relative flex h-[8vh] w-full bg-[#252525]">
+                    <div
+                        className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "home"
+                                ? "bg-[#2f2f2f]"
+                                : "hover:bg-[#2a2a2a]"
+                            }`}
+                        onClick={() =>
+                            setAppData(prev => ({
+                                ...prev,
+                                current_page: "home",
+                            }))
+                        }
+                    >
+                        <span className="font-medium text-white">
+                            Home
+                        </span>
+                    </div>
+
+                    <div
+                        className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "liveview"
+                                ? "bg-[#2f2f2f]"
+                                : "hover:bg-[#2a2a2a]"
+                            }`}
+                        onClick={() =>
+                            setAppData(prev => ({
+                                ...prev,
+                                current_page: "liveview",
+                            }))
+                        }
+                    >
+                        <span className="font-medium text-white">
+                            Live view
+                        </span>
+                    </div>
+
+                    <div
+                        className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "settings"
+                                ? "bg-[#2f2f2f]"
+                                : "hover:bg-[#2a2a2a]"
+                            }`}
+                        onClick={() =>
+                            setAppData(prev => ({
+                                ...prev,
+                                current_page: "settings",
+                            }))
+                        }
+                    >
+                        <span className="font-medium text-white">
+                            Settings
+                        </span>
+                    </div>
+
+                    <div
+                        className={`absolute bottom-0 left-0 h-0.5 w-1/3 bg-red-500 transition-transform duration-100 ${appData.current_page === "home"
+                                ? "translate-x-0"
+                                : appData.current_page === "liveview"
+                                    ? "translate-x-full"
+                                    : "translate-x-[200%]"
+                            }`}
+                    />
                 </div>
+
                 {appData.current_page === "home" && <HomeTab />}
                 {appData.current_page === "liveview" && <LiveviewTab />}
                 {appData.current_page === "settings" && <SettingsTab />}

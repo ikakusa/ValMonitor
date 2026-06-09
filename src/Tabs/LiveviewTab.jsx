@@ -6,7 +6,7 @@ import { AppContext } from "../AppContext";
 function LiveviewTab() {
     const { appData, setAppData } = useContext(AppContext);
     return (
-        <div className="liveview_container">
+        <div className="animate-[container-opacity-enter_0.5s_forwards]">
             <h1>何見てんだおめえ</h1>
         </div>
     );

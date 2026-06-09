@@ -6,7 +6,7 @@ import { AppContext } from "../AppContext";
 function SettingsTab() {
     const { appData, setAppData } = useContext(AppContext);
     return (
-        <div className="settings_container">
+        <div className="animate-[container-opacity-enter_0.5s_forwards]">
             <h1>こっちみんな</h1>
         </div>
     );

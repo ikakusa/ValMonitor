@@ -4587,6 +4587,7 @@ name = "valotracker"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "bytes",
  "once_cell",
  "reqwest",
  "serde",
@@ -4594,6 +4595,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "thiserror 2.0.18",
  "tokio",
 ]
 

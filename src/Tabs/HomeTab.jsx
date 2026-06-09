@@ -5,55 +5,91 @@ import { AppContext } from "../AppContext";
 import valorant_icon from "../Assets/valorant_icon.png";
 import unranked_icon from "../Assets/unranked.png";
 
-function RankPanel({ id, title_text, season_name, tier, rr, icon, no_rr = false }) {
-    return <div className={id}>
-        <div id="title_panel">
-            <p id="current_rank">{title_text}</p>
-            <p id="season_name">{season_name}</p>
-        </div>
-        <div id="rank_element">
-            <img id="rank_icon" src={icon ?? unranked_icon}></img>
-            <div id="rank_text">
-                <p id="name">{tier}</p>
-                {!no_rr && <p id="rr">{rr} RR</p>}
+function RankPanel({
+    title_text,
+    season_name,
+    tier,
+    rr,
+    icon,
+    no_rr = false,
+}) {
+    return (
+        <div>
+            <div className="flex justify-between">
+                <p className="ml-2.5 mt-2.5 mb-1 text-left text-[1.25em]">
+                    {title_text}
+                </p>
+
+                <p className="mr-2.5 mt-3 text-right text-[0.85em] text-gray-500">
+                    {season_name}
+                </p>
+            </div>
+
+            <div className="mx-1.25 mt-[-2.5px] mb-1.25 flex h-[13.5vh] w-[28.5vw] items-center rounded-2xl bg-[#222222]">
+                <img
+                    src={icon ?? unranked_icon}
+                    className="ml-1.25 h-[10vh]"
+                    alt=""
+                />
+
+                <div className="ml-1.25 flex flex-col gap-[1.5px] text-left text-[1.35em]">
+                    <p className="m-0">{tier}</p>
+
+                    {!no_rr && (
+                        <p className="m-0 text-[0.8em]">
+                            {rr} RR
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
-    </div>
+    );
 }
 
 function HomeTab() {
-    const { appData, setAppData } = useContext(AppContext);
+    const { appData } = useContext(AppContext);
+
     return (
-        <div className="home_container">
-            <div className="user_info_panel">
-                <div className="user_info_padding">
-                    <img className="player_icon" src={appData.card_image ?? valorant_icon}></img>
-                    <div className="name_panel">
-                        <p id="p_name">{appData.full_name}</p>
-                        <p id="p_level">Level: {appData.account_level}</p>
+        <div className="animate-[container-opacity-enter_0.5s_forwards]">
+            <div className="flex h-[15vh] w-full bg-[#222222]">
+                <div className="ml-4 flex h-[15vh] w-full items-center text-left">
+                    <img
+                        className="h-16 w-16 rounded-full border-2 border-white"
+                        src={appData.card_image ?? valorant_icon}
+                        alt=""
+                    />
+
+                    <div className="ml-2 flex flex-col gap-1.25 text-[1.25em]">
+                        <p className="m-0">
+                            {appData.full_name}
+                        </p>
+
+                        <p className="m-0 text-[0.85em] text-gray-500">
+                            Level: {appData.account_level}
+                        </p>
                     </div>
                 </div>
             </div>
-            <div className="info_container">
-                <div className="rank_info_panel">
+
+            <div className="flex flex-row">
+                <div>
                     <RankPanel
-                        id="current_rank_panel"
                         title_text="Current Rank"
                         season_name={appData.current_season_name}
                         tier={appData.current_rank.name}
                         icon={appData.current_rank.icon}
                         rr={appData.current_rank.rr}
                     />
+
                     <RankPanel
-                        id="current_peak_rank_panel"
                         title_text="Season Peak Rank"
                         season_name={appData.current_season_name}
                         tier={appData.current_season_peak.name}
                         icon={appData.current_season_peak.icon}
                         no_rr
                     />
+
                     <RankPanel
-                        id="peak_rank_panel"
                         title_text="Peak Rank"
                         season_name={appData.peak_rank.season_name}
                         tier={appData.peak_rank.name}
@@ -62,16 +98,16 @@ function HomeTab() {
                     />
                 </div>
 
-                <div className="rank_panel_divider">
-                    <div id="divider">
-
-                    </div>
+                <div className="flex w-[2vw] justify-center">
+                    <div className="mx-1.25 my-2.5 w-px bg-[#3f3f3f]" />
                 </div>
 
-                <div className="stats_panel_container">
-                    <p id="status">Status</p>
-                    <div className="stats_panel">
-                    </div>
+                <div>
+                    <p className="ml-2.5 mt-2.5 mb-1.25 text-left text-[1.25em]">
+                        Status
+                    </p>
+
+                    <div className="ml-[2.5px] mr-1.25 mt-[-2.5px] flex h-[68vh] w-[67vw] rounded-2xl bg-[#222222]" />
                 </div>
             </div>
         </div>

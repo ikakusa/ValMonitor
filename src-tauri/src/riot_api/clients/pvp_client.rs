@@ -1,0 +1,129 @@
+use crate::riot_api::{
+    clients::{asset_client::AssetClient, pvp_models::MMR},
+    notify::NotifyStruct,
+    response::{RequestError, RiotResponse},
+    shared_data::SharedGameData,
+};
+use reqwest::{
+    header::{self, HeaderMap, HeaderValue},
+    Client,
+};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex, atomic::Ordering}, time::Duration,
+};
+
+pub struct PvPClient {
+    client: Mutex<Client>,
+    initialized: NotifyStruct,
+    initialized_http: NotifyStruct,
+    shared: Arc<SharedGameData>,
+    shards: HashMap<String, String>,
+}
+
+impl PvPClient {
+    pub async fn send_request(
+        &self,
+        path: &str,
+        use_glz: bool,
+    ) -> Result<RiotResponse, RequestError> {
+        while !self.initialized_http.value.load(Ordering::Acquire) {
+            self.initialized_http.notifier.notified().await;
+        }
+
+        while self.shared.should_reset() {
+            self.shared.need_reset.notifier.notified().await;
+        }
+
+        loop {
+            let region = self.shared.get_region();
+
+            let pre = if use_glz {
+                format!("glz-{}-1.{}", self.shards.get(&region).unwrap(), region)
+            } else {
+                format!("pd.{}", region)
+            };
+
+            let client = { self.client.lock().unwrap().clone() };
+            let response = client
+                .get(format!("https://{}.a.pvp.net{}", pre, path))
+                .send()
+                .await?;
+            let status = response.status();
+
+            if !status.is_success() {
+                self.shared.order_reset(true);
+                tokio::time::sleep(Duration::from_secs(3)).await;
+                continue;
+            }
+
+            let bytes = response.bytes().await?;
+            break Ok(RiotResponse {
+                bytes: bytes,
+                status: status,
+            })
+        }
+    }
+    pub async fn get_mmr(&self, puuid: &str) -> Result<MMR, RequestError> {
+        let res = self
+            .send_request(format!("/mmr/v1/players/{puuid}").as_str(), false)
+            .await?
+            .get_json::<MMR>()?;
+        Ok(res)
+    }
+    pub async fn build(&self) -> Result<(), RequestError> {
+        let auth_token = { self.shared.get_auth().clone() };
+        let basic_authorization = format!("Bearer {}", auth_token.access_token);
+
+        *self.shared.get_auth() = auth_token.clone();
+
+        let mut bheader = HeaderMap::new();
+        bheader.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str(basic_authorization.as_str()).unwrap(),
+        );
+        bheader.insert(
+            "X-Riot-Entitlements-JWT",
+            HeaderValue::from_str(auth_token.entitlements_token.as_str()).unwrap(),
+        );
+        bheader.insert(
+            "X-Riot-ClientPlatform",
+            HeaderValue::from_str("ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9").unwrap(),
+        );
+
+        let v = AssetClient::get_version().await?.data.riot_client_version;
+        bheader.insert(
+            "X-Riot-ClientVersion",
+            HeaderValue::from_str(v.as_str()).unwrap(),
+        );
+
+        let new_client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .default_headers(bheader)
+            .build()
+            .unwrap();
+
+        *self.client.lock().unwrap() = new_client;
+
+        self.initialized_http.set_and_notify(true);
+        self.initialized.set_and_notify(true);
+        Ok(())
+    }
+    pub fn new(shared: Arc<SharedGameData>) -> Self {
+        let mut shards = HashMap::new();
+        shards.insert("ap".into(), "ap".into());
+        shards.insert("kr".into(), "kr".into());
+        shards.insert("latam".into(), "na".into());
+        shards.insert("br".into(), "na".into());
+        shards.insert("na".into(), "na".into());
+        shards.insert("eu".into(), "eu".into());
+
+        Self {
+            shared: shared,
+            initialized: NotifyStruct::default(),
+            initialized_http: NotifyStruct::default(),
+            client: Mutex::new(reqwest::Client::new()),
+            shards: shards,
+        }
+    }
+}
