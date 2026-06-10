@@ -1,4 +1,5 @@
 use super::local_models::{AccountAlias, Entitlements};
+use crate::riot_api::clients::local_models::{Presence, PresenceData, PrivatePresence};
 use crate::riot_api::data::auth_token::AuthToken;
 use crate::riot_api::data::user_data::UserData;
 use crate::riot_api::notify::NotifyStruct;
@@ -21,14 +22,24 @@ pub struct LocalClient {
 }
 
 impl LocalClient {
-    pub async fn send_request(&self, path: &str) -> Result<RiotResponse, RequestError> {
+    pub async fn send_request(
+        &self,
+        path: &str,
+        skip_reset_check: bool,
+    ) -> Result<RiotResponse, RequestError> {
         let result = async {
             while !self.initialized_http.value.load(Ordering::Acquire) {
                 self.initialized_http.notifier.notified().await;
             }
 
-            while self.shared.should_reset() {
-                self.shared.need_reset.notifier.notified().await;
+            if !skip_reset_check {
+                while self.shared.should_reset() {
+                    let notified = self.shared.need_reset.notifier.notified();
+                    if !self.shared.should_reset() {
+                        break;
+                    }
+                    notified.await;
+                }
             }
 
             loop {
@@ -46,8 +57,19 @@ impl LocalClient {
 
                 if !status.is_success() {
                     self.shared.order_reset(true);
-                    tokio::time::sleep(Duration::from_secs(3)).await;
-                    continue;
+                    if !skip_reset_check {
+                        loop {
+                            let notified = self.shared.need_reset.notifier.notified();
+                            if !self.shared.should_reset() {
+                                break;
+                            }
+                            notified.await;
+                        }
+                        tokio::time::sleep(Duration::from_secs(3)).await;
+                        continue;
+                    } else {
+                        return Err(RequestError::Unknown("Failed to send request".into()));
+                    }
                 }
 
                 let bytes = response.bytes().await?;
@@ -64,9 +86,12 @@ impl LocalClient {
         result
     }
 
-    pub async fn get_entitlements_data(&self) -> Result<Entitlements, RequestError> {
+    pub async fn get_entitlements_data(
+        &self,
+        skip_reset_check: bool,
+    ) -> Result<Entitlements, RequestError> {
         let res = self
-            .send_request("/entitlements/v1/token")
+            .send_request("/entitlements/v1/token", skip_reset_check)
             .await?
             .get_json::<Entitlements>()?;
         Ok(res)
@@ -79,22 +104,65 @@ impl LocalClient {
 
         fs::read_to_string(&path)
     }
-    pub async fn get_account_alias(&self) -> Result<AccountAlias, RequestError> {
+    pub async fn get_account_alias(
+        &self,
+        skip_reset_check: bool,
+    ) -> Result<AccountAlias, RequestError> {
         let res = self
-            .send_request("/player-account/aliases/v1/active")
+            .send_request("/player-account/aliases/v1/active", skip_reset_check)
             .await?
             .get_json::<AccountAlias>()?;
         Ok(res)
     }
-    pub async fn get_external_session(&self) -> Result<Value, RequestError> {
+    pub async fn get_external_session(
+        &self,
+        skip_reset_check: bool,
+    ) -> Result<Value, RequestError> {
         let res = self
-            .send_request("/product-session/v1/external-sessions")
+            .send_request("/product-session/v1/external-sessions", skip_reset_check)
             .await?
             .get_json::<Value>()?;
         Ok(res)
     }
-    pub async fn get_region(&self) -> Result<String, RequestError> {
-        let res = self.get_external_session().await?;
+    pub async fn get_presences(&self, skip_reset_check: bool) -> Result<Presence, RequestError> {
+        Ok(self
+            .send_request("/chat/v4/presences", skip_reset_check)
+            .await?
+            .get_json::<Presence>()?)
+    }
+    pub async fn get_my_presence(
+        &self,
+        skip_reset_check: bool,
+    ) -> Result<PresenceData, RequestError> {
+        let me = { self.shared.get_user().clone().puuid };
+        Ok(self
+            .get_presences(skip_reset_check)
+            .await?
+            .presences
+            .iter()
+            .find(|wa| wa.puuid == me && wa.product == "valorant")
+            .ok_or(RequestError::Unknown("Cannot find me".into()))?
+            .clone())
+    }
+    pub async fn get_private_presence(
+        &self,
+        skip_reset_check: bool,
+    ) -> Result<PrivatePresence, RequestError> {
+        let me = self.get_my_presence(skip_reset_check).await?;
+        let encoded = me
+            .private
+            .ok_or(RequestError::Unknown("Cannot get private presence".into()))?;
+        let decoded = general_purpose::STANDARD
+            .decode(encoded)
+            .map_err(|e| RequestError::Unknown(e.to_string()))?;
+        let private =
+            String::from_utf8(decoded).map_err(|e| RequestError::Unknown(e.to_string()))?;
+        let presence = serde_json::from_str::<PrivatePresence>(&private)
+            .map_err(|e| RequestError::Unknown(e.to_string()))?;
+        Ok(presence)
+    }
+    pub async fn get_region(&self, skip_reset_check: bool) -> Result<String, RequestError> {
+        let res = self.get_external_session(skip_reset_check).await?;
 
         let key = res
             .as_object()
@@ -162,7 +230,7 @@ impl LocalClient {
         self.initialized_http.set_and_notify(true);
 
         let entitlements = self
-            .get_entitlements_data()
+            .get_entitlements_data(true)
             .await
             .map_err(|e| format!("Failed to obtain entitlements data: {}", e))?;
         let entitlements_token = entitlements.token;
@@ -176,12 +244,12 @@ impl LocalClient {
         };
 
         let alias = self
-            .get_account_alias()
+            .get_account_alias(true)
             .await
             .map_err(|e| format!("Failed to obtain account alias: {}", e))?;
 
         let region = self
-            .get_region()
+            .get_region(true)
             .await
             .map_err(|e| format!("Failed to fetch region: {}", e))?;
 
@@ -191,6 +259,8 @@ impl LocalClient {
             tag: alias.tag_line,
             region: region.clone(),
         };
+
+        println!("{}", serde_json::to_string(&self.get_external_session(true).await.map_err(|e| e.to_string())).unwrap());
 
         self.initialized.set_and_notify(true);
         Ok(())

@@ -10,7 +10,8 @@ use reqwest::{
 };
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex, atomic::Ordering}, time::Duration,
+    sync::{atomic::Ordering, Arc, Mutex},
+    time::Duration,
 };
 
 pub struct PvPClient {
@@ -26,16 +27,28 @@ impl PvPClient {
         &self,
         path: &str,
         use_glz: bool,
+        skip_reset_check: bool,
     ) -> Result<RiotResponse, RequestError> {
         while !self.initialized_http.value.load(Ordering::Acquire) {
             self.initialized_http.notifier.notified().await;
         }
 
-        while self.shared.should_reset() {
-            self.shared.need_reset.notifier.notified().await;
+        if !skip_reset_check {
+            while self.shared.should_reset() {
+                let notified = self.shared.need_reset.notifier.notified();
+                if !self.shared.should_reset() {
+                    break;
+                }
+                notified.await;
+            }
         }
 
+        let mut attempts = 0;
         loop {
+            attempts += 1;
+            if attempts > 3 {
+                return Err(RequestError::Unknown("Max retries exceeded".into()));
+            }
             let region = self.shared.get_region();
 
             let pre = if use_glz {
@@ -49,24 +62,36 @@ impl PvPClient {
                 .get(format!("https://{}.a.pvp.net{}", pre, path))
                 .send()
                 .await?;
+
             let status = response.status();
+            let bytes = response.bytes().await?;
 
             if !status.is_success() {
                 self.shared.order_reset(true);
-                tokio::time::sleep(Duration::from_secs(3)).await;
-                continue;
+                if !skip_reset_check {
+                    while self.shared.should_reset() {
+                        let notified = self.shared.need_reset.notifier.notified();
+                        if !self.shared.should_reset() {
+                            break;
+                        }
+                        notified.await;
+                    }
+                    tokio::time::sleep(Duration::from_secs(3)).await;
+                    continue;
+                } else {
+                    return Err(RequestError::Unknown("Failed to send request".into()));
+                }
             }
 
-            let bytes = response.bytes().await?;
             break Ok(RiotResponse {
                 bytes: bytes,
                 status: status,
-            })
+            });
         }
     }
-    pub async fn get_mmr(&self, puuid: &str) -> Result<MMR, RequestError> {
+    pub async fn get_mmr(&self, puuid: &str, skip: bool) -> Result<MMR, RequestError> {
         let res = self
-            .send_request(format!("/mmr/v1/players/{puuid}").as_str(), false)
+            .send_request(format!("/mmr/v1/players/{puuid}").as_str(), false, skip)
             .await?
             .get_json::<MMR>()?;
         Ok(res)

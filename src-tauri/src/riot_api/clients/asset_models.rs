@@ -7,15 +7,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerCardData {
-    pub uuid: String,
-    pub display_name: String,
-    pub is_hidden_if_not_owned: bool,
-    pub theme_uuid: String,
-    pub display_icon: String,
-    pub small_art: String,
-    pub wide_art: String,
-    pub large_art: String,
-    pub asset_path: String,
+    pub uuid: Option<String>,
+    pub display_name: Option<String>,
+    pub is_hidden_if_not_owned: Option<bool>,
+    pub theme_uuid: Option<String>,
+    pub display_icon: Option<String>,
+    pub small_art: Option<String>,
+    pub wide_art: Option<String>,
+    pub large_art: Option<String>,
+    pub asset_path: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,7 +34,6 @@ pub struct PlayerCard {
     RiotVersion
 */
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct RiotVersionData {
     pub manifest_id: String,
     pub branch: String,

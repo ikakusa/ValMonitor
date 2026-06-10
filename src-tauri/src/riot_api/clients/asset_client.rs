@@ -30,6 +30,24 @@ impl AssetClient {
         })
     }
 
+    pub async fn send_rc_request(path: &str) -> Result<RiotResponse, RequestError> {
+        let response = Self::http_client()
+            .get(format!("https://api.radiantconnect.ca/api{path}"))
+            .send()
+            .await?;
+        let status = response.status();
+
+        if !status.is_success() {
+            return Err(RequestError::FailedWithStatus(status));
+        }
+
+        let bytes = response.bytes().await?;
+        Ok(RiotResponse {
+            bytes: bytes,
+            status: status,
+        })
+    }
+
     pub async fn get_player_card(uuid: &str) -> Result<PlayerCard, RequestError> {
         let res = Self::send_request(format!("/v1/playercards/{}", uuid).as_str())
             .await?
@@ -38,7 +56,7 @@ impl AssetClient {
     }
 
     pub async fn get_version() -> Result<RiotVersion, RequestError> {
-        let res = Self::send_request("/v1/version")
+        let res = Self::send_rc_request("/version/latest")
             .await?
             .get_json::<RiotVersion>()?;
         Ok(res)

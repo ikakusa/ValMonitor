@@ -2,8 +2,8 @@ use super::notify::NotifyStruct;
 use crate::riot_api::clients::{local_client::LocalClient, pvp_client::PvPClient};
 use crate::riot_api::shared_data::SharedGameData;
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
 use std::sync::atomic::Ordering;
+use std::sync::Mutex;
 use std::{sync::Arc, time::Duration};
 
 pub struct ValorantAPI {
@@ -24,14 +24,15 @@ impl ValorantAPI {
                     Ok(content) => {
                         let should_update = {
                             if self.shared.should_reset() {
-                                return true;
-                            }
-                            let mut raw_lock = self.raw_lockfile.lock().unwrap();
-                            if content != *raw_lock {
-                                *raw_lock = content.clone();
                                 true
                             } else {
-                                false
+                                let mut raw_lock = self.raw_lockfile.lock().unwrap();
+                                if content != *raw_lock {
+                                    *raw_lock = content.clone();
+                                    true
+                                } else {
+                                    false
+                                }
                             }
                         };
 
@@ -41,17 +42,13 @@ impl ValorantAPI {
                         }
 
                         match self.local_client.build().await {
-                            Ok(_) => {
-
-                            },
+                            Ok(_) => {}
                             Err(err) => {
                                 println!("{}", err)
                             }
                         }
                         match self.pvp_client.build().await {
-                            Ok(_) => {
-
-                            },
+                            Ok(_) => {}
                             Err(err) => {
                                 println!("{}", err)
                             }

@@ -79,15 +79,15 @@ function App() {
                 const region = await get_region();
 
                 if (appData.card_id !== card_id) {
-                    const card_json = await invoke("get_playercard_by_id", { id: card_id });
+                    const card_json = (await invoke("get_playercard_by_id", { id: card_id }))["data"];
                     setAppData(prev => ({ ...prev, card_id: card_id, card_image: card_json["displayIcon"] }));
                 }
 
                 setAppData(prev => ({
                     ...prev,
                     presence: json,
-                    full_name,
-                    puuid,
+                    full_name: full_name,
+                    puuid: puuid,
                     region: region,
                     account_level: level
                 }));
@@ -109,7 +109,6 @@ function App() {
             setCompetitiveSeasons((await (await fetch("https://valorant-api.com/v1/seasons")).json())["data"]);
         }
 
-
         fetch_seasons();
         get_gamestate();
         load_my_presence();
@@ -127,7 +126,6 @@ function App() {
 
         async function get_rank() {
             const json = await invoke("get_player_mmr", { uid: appData.puuid });
-            console.log(json)
             if (!json["QueueSkills"]) return;
             try {
                 const all_seasons = competitive_seasons;
@@ -200,8 +198,8 @@ function App() {
                 <div className="relative flex h-[8vh] w-full bg-[#252525]">
                     <div
                         className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "home"
-                                ? "bg-[#2f2f2f]"
-                                : "hover:bg-[#2a2a2a]"
+                            ? "bg-[#2f2f2f]"
+                            : "hover:bg-[#2a2a2a]"
                             }`}
                         onClick={() =>
                             setAppData(prev => ({
@@ -217,8 +215,8 @@ function App() {
 
                     <div
                         className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "liveview"
-                                ? "bg-[#2f2f2f]"
-                                : "hover:bg-[#2a2a2a]"
+                            ? "bg-[#2f2f2f]"
+                            : "hover:bg-[#2a2a2a]"
                             }`}
                         onClick={() =>
                             setAppData(prev => ({
@@ -234,8 +232,8 @@ function App() {
 
                     <div
                         className={`flex flex-1 cursor-pointer items-center justify-center transition-all duration-300 ${appData.current_page === "settings"
-                                ? "bg-[#2f2f2f]"
-                                : "hover:bg-[#2a2a2a]"
+                            ? "bg-[#2f2f2f]"
+                            : "hover:bg-[#2a2a2a]"
                             }`}
                         onClick={() =>
                             setAppData(prev => ({
@@ -251,10 +249,10 @@ function App() {
 
                     <div
                         className={`absolute bottom-0 left-0 h-0.5 w-1/3 bg-red-500 transition-transform duration-100 ${appData.current_page === "home"
-                                ? "translate-x-0"
-                                : appData.current_page === "liveview"
-                                    ? "translate-x-full"
-                                    : "translate-x-[200%]"
+                            ? "translate-x-0"
+                            : appData.current_page === "liveview"
+                                ? "translate-x-full"
+                                : "translate-x-[200%]"
                             }`}
                     />
                 </div>

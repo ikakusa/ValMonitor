@@ -1,12 +1,10 @@
-use std::str::FromStr;
-
-use crate::riot_api::core::VALORANT_API;
-use serde_json::Value;
-
+use crate::riot_api::{
+    clients::local_models::{Presence, PresenceData, PrivatePresence},
+    core::VALORANT_API,
+};
 #[tauri::command]
-pub async fn get_region() -> Result<String, String> {
-    Ok("".into())
-    // VALORANT_API.get_region().await.map_err(|e| e.to_string())
+pub async fn get_region() -> String {
+    VALORANT_API.shared.get_user().clone().region
 }
 
 #[tauri::command]
@@ -17,11 +15,7 @@ pub async fn get_puuid() -> String {
 #[tauri::command]
 pub async fn get_full_username() -> String {
     let user = { VALORANT_API.shared.get_user().clone() };
-    format!(
-        "{}#{}",
-        user.name,
-        user.tag
-    )
+    format!("{}#{}", user.name, user.tag)
 }
 
 #[tauri::command]
@@ -39,26 +33,24 @@ pub async fn get_gamestate() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn get_private_presence() -> Result<Value, String> {
-    Ok(Value::from_str("{}").unwrap())
-
-    // VALORANT_API
-    //     .get_private_presence()
-    //     .await
-    //     .map_err(|e| e.to_string())
+pub async fn get_private_presence() -> Result<PrivatePresence, String> {
+    VALORANT_API
+        .local_client
+        .get_private_presence(false)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn get_my_presence() -> Result<Value, String> {
-    Ok(Value::from_str("{}").unwrap())
-    // VALORANT_API
-    //     .get_my_presence()
-    //     .await
-    //     .map_err(|e| e.to_string())
+pub async fn get_my_presence() -> Result<PresenceData, String> {
+    VALORANT_API
+        .local_client
+        .get_my_presence(false)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn get_presence() -> Result<Value, String> {
-    Ok(Value::from_str("{}").unwrap())
-    // VALORANT_API.get_presence().await.map_err(|e| e.to_string())
+pub async fn get_presence() -> Result<Presence, String> {
+    VALORANT_API.local_client.get_presences(false).await.map_err(|e| e.to_string())
 }
