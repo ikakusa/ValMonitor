@@ -20,7 +20,7 @@ function RankPanel({
                     {title_text}
                 </p>
 
-                <p className="mr-2.5 mt-3 text-right text-[0.85em] text-gray-500">
+                <p className="mr-2.5 mt-5 text-right text-[0.85em] text-gray-500">
                     {season_name}
                 </p>
             </div>

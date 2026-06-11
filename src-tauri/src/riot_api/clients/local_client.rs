@@ -11,12 +11,13 @@ use reqwest::{header::AUTHORIZATION, Client};
 use serde_json::Value;
 use std::env;
 use std::fs;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{atomic::Ordering, Arc, Mutex};
 use std::time::Duration;
 
 pub struct LocalClient {
     client: Mutex<Client>,
-    initialized: NotifyStruct,
+    pub initialized: NotifyStruct,
     initialized_http: NotifyStruct,
     shared: Arc<SharedGameData>,
 }
@@ -47,6 +48,17 @@ impl LocalClient {
                     let auth = self.shared.get_auth();
                     auth.lockfile_port.clone()
                 };
+                let addr = format!("127.0.0.1:{}", port);
+                let wa = addr
+                    .to_socket_addrs()
+                    .unwrap()
+                    .find(|x| (*x).is_ipv4())
+                    .unwrap();
+                while !TcpStream::connect(wa).is_ok() {
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                    println!("couldnt connect to local server");
+                    continue;
+                }
 
                 let client = { self.client.lock().unwrap().clone() };
                 let response = client
@@ -103,6 +115,16 @@ impl LocalClient {
         let path = format!(r"{}\Riot Games\Riot Client\Config\lockfile", local_appdata);
 
         fs::read_to_string(&path)
+    }
+    pub async fn get_gamestate(&self, skip_reset_check: bool) -> Result<String, RequestError> {
+        let res = self.get_private_presence(skip_reset_check).await?;
+        let match_p = res
+            .match_presence_data
+            .ok_or(RequestError::Unknown("cannot get match presence".into()))?;
+        let session_loop = match_p.session_loop_state.ok_or(RequestError::Unknown(
+            "cannot get session loop state".into(),
+        ))?;
+        Ok(session_loop)
     }
     pub async fn get_account_alias(
         &self,
@@ -248,10 +270,13 @@ impl LocalClient {
             .await
             .map_err(|e| format!("Failed to obtain account alias: {}", e))?;
 
-        let region = self
-            .get_region(true)
-            .await
-            .map_err(|e| format!("Failed to fetch region: {}", e))?;
+        let region = loop {
+            let region = match self.get_region(true).await {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            break region;
+        };
 
         *self.shared.get_user() = UserData {
             puuid: entitlements.subject,
@@ -259,8 +284,6 @@ impl LocalClient {
             tag: alias.tag_line,
             region: region.clone(),
         };
-
-        println!("{}", serde_json::to_string(&self.get_external_session(true).await.map_err(|e| e.to_string())).unwrap());
 
         self.initialized.set_and_notify(true);
         Ok(())

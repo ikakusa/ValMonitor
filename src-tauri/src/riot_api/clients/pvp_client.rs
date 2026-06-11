@@ -57,9 +57,12 @@ impl PvPClient {
                 format!("pd.{}", region)
             };
 
+            let url = format!("https://{}.a.pvp.net{}", pre, path);
+            println!("[PvPClient::send_request] {} (Attempt: {})", url, attempts);
+
             let client = { self.client.lock().unwrap().clone() };
             let response = client
-                .get(format!("https://{}.a.pvp.net{}", pre, path))
+                .get(url)
                 .send()
                 .await?;
 

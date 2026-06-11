@@ -22,8 +22,10 @@ impl ValorantAPI {
             loop {
                 match LocalClient::read_lockfile() {
                     Ok(content) => {
+                        let mut update_when_req_err = false;
                         let should_update = {
                             if self.shared.should_reset() {
+                                update_when_req_err = true;
                                 true
                             } else {
                                 let mut raw_lock = self.raw_lockfile.lock().unwrap();
@@ -53,7 +55,9 @@ impl ValorantAPI {
                                 println!("{}", err)
                             }
                         }
-                        println!("[ValorantApi::monitor_lockfile] Updated clients");
+                        if update_when_req_err {
+                            println!("[ValorantApi::monitor_lockfile] Updated clients");
+                        }
                         self.shared.order_reset(false);
                     }
                     Err(_err) => continue,

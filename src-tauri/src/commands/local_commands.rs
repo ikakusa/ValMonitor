@@ -25,11 +25,11 @@ pub async fn is_api_initialized() -> bool {
 
 #[tauri::command]
 pub async fn get_gamestate() -> Result<String, String> {
-    Ok("".into())
-    // VALORANT_API
-    //     .get_gamestate()
-    //     .await
-    //     .map_err(|e| e.to_string())
+    VALORANT_API
+        .local_client
+        .get_gamestate(false)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
