@@ -1,12 +1,16 @@
-use crate::riot_api::notify::NotifyStruct;
 use super::data::{auth_token::AuthToken, user_data::UserData};
-use std::sync::{Mutex, MutexGuard, atomic::Ordering};
+use crate::riot_api::notify::NotifyStruct;
+use std::{
+    path::PathBuf,
+    sync::{atomic::Ordering, Mutex, MutexGuard},
+};
 
 #[derive(Default)]
 pub struct SharedGameData {
     pub user_data: Mutex<UserData>,
     pub auth_data: Mutex<AuthToken>,
-    pub need_reset: NotifyStruct
+    pub need_reset: NotifyStruct,
+    pub app_data_path: PathBuf,
 }
 
 impl SharedGameData {

@@ -56,7 +56,6 @@ impl LocalClient {
                     .unwrap();
                 while !TcpStream::connect(wa).is_ok() {
                     tokio::time::sleep(Duration::from_secs(5)).await;
-                    println!("couldnt connect to local server");
                     continue;
                 }
 

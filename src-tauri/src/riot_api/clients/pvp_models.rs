@@ -19,7 +19,7 @@ pub struct MMRQueueSkillsSeasonData {
     pub ranked_rating: i32,
     pub wins_by_tier: Option<HashMap<String, i32>>,
     pub games_needed_for_rating: i32,
-    pub total_wins_needed_for_rank: i32
+    pub total_wins_needed_for_rank: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -35,7 +35,7 @@ pub struct MMRLatestCompetitiveUpdate {
     pub ranked_rating_before_update: i32,
     pub ranked_rating_earned: i32,
     pub ranked_rating_performance_bonus: i32,
-    pub a_f_k_penalty: i32
+    pub a_f_k_penalty: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -55,7 +55,7 @@ pub struct MMR {
     pub queue_skills: Option<HashMap<String, MMRQueueSkillsData>>,
     pub latest_competitive_update: Option<MMRLatestCompetitiveUpdate>,
     pub is_leaderboard_anonymized: bool,
-    pub is_act_rank_badge_hidden: bool
+    pub is_act_rank_badge_hidden: bool,
 }
 
 /*

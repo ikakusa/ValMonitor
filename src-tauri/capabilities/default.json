@@ -2,9 +2,33 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
-    "opener:default"
-  ]
+    "opener:default",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    "fs:allow-read",
+    "fs:allow-write",
+    "fs:allow-create",
+    "fs:allow-appdata-read",
+    "fs:allow-appdata-write"
+  ],
+  "scope": {
+    "fs": [
+      "$APPDATA",
+      "$APPDATA/**",
+      "$APPLOCALDATA",
+      "$APPLOCALDATA/**"
+    ]
+  }
 }

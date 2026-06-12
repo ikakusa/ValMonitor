@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 /*
     PlayerCard
 */
@@ -27,8 +26,6 @@ pub struct PlayerCard {
 /*
     End of PlayerCard
 */
-
-
 
 /*
     RiotVersion

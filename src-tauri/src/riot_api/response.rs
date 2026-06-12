@@ -1,6 +1,6 @@
-use thiserror::Error;
 use bytes::Bytes;
-use serde::{de::DeserializeOwned};
+use serde::de::DeserializeOwned;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum RequestError {
@@ -12,9 +12,9 @@ pub enum RequestError {
 
     #[error("json parse failed: {0}")]
     Json(#[from] serde_json::Error),
-    
+
     #[error("An error has occurred: {0}")]
-    Unknown(String)
+    Unknown(String),
 }
 
 pub struct RiotResponse {

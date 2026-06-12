@@ -52,5 +52,9 @@ pub async fn get_my_presence() -> Result<PresenceData, String> {
 
 #[tauri::command]
 pub async fn get_presence() -> Result<Presence, String> {
-    VALORANT_API.local_client.get_presences(false).await.map_err(|e| e.to_string())
+    VALORANT_API
+        .local_client
+        .get_presences(false)
+        .await
+        .map_err(|e| e.to_string())
 }

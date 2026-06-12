@@ -61,10 +61,7 @@ impl PvPClient {
             println!("[PvPClient::send_request] {} (Attempt: {})", url, attempts);
 
             let client = { self.client.lock().unwrap().clone() };
-            let response = client
-                .get(url)
-                .send()
-                .await?;
+            let response = client.get(url).send().await?;
 
             let status = response.status();
             let bytes = response.bytes().await?;
