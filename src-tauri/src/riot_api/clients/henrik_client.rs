@@ -36,6 +36,7 @@ impl HenrikClient {
             self.initialized_http.notifier.notified().await;
         }
         loop {
+            println!("[HenrikClient::send_request] {}", path);
             let client = { self.client.lock().unwrap().clone() };
             let res = client
                 .get(format!("https://api.henrikdev.xyz/valorant{}", path))
@@ -44,7 +45,11 @@ impl HenrikClient {
             let status = res.status();
             if !status.is_success() {
                 let _ = self.build().await;
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                let mut wait_time = 5;
+                if status == 429 {
+                    wait_time = 60;
+                }
+                tokio::time::sleep(Duration::from_secs(wait_time)).await;
                 continue;
             }
 
@@ -57,7 +62,7 @@ impl HenrikClient {
     }
     pub async fn get_account_by_id(&self, puuid: &str) -> Result<Account, RequestError> {
         Ok(self
-            .send_request(format!("/v2/by-puuid/account/{puuid}{}", puuid).as_str())
+            .send_request(format!("/v2/by-puuid/account/{}", puuid).as_str())
             .await?
             .get_json::<Account>()?)
     }

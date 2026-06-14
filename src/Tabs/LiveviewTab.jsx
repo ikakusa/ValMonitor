@@ -4,43 +4,16 @@ import "../App.css";
 import { AppContext } from "../AppContext";
 
 function LiveviewTab() {
-    const { appData, setAppData, pregameData, setPregameData } = useContext(AppContext);
-    const { userData, setUserData} = useState({
-        agent: {
-            name: null,
-            icon: null,
-            id: null
-        },
-        rank: {
-            rr: null,
-            tier: null,
-            peak_tier: null,
-            icon: null,
-            peak_icon: null
-        },
-        stats: {
-            match_count: null,
-            dmr: null,
-            kda: {
-                k: null,
-                d: null,
-                a: null
-            },
-            win_rate: null,
-            hs: null
-        },
-        name: null,
-        puuid: null,
-        /**
-         * { weapon_id, weapon_name, weapon_image }
-         */
-        skins: [],
-    });
+    const { appData, setAppData, matchData, userData } = useContext(AppContext);
+
+    useEffect(() => {
+    }, [matchData, userData]);
     
     return ["INGAME", "PREGAME"].includes(appData.gamestate) ?
     (
         <div className="animate-[container-opacity-enter_0.5s_forwards]">
-            <h1>{appData.gamestate} {JSON.stringify(pregameData)}</h1>
+            <h1>{appData.gamestate}</h1>
+            {Object.entries(userData).map(([key, value]) => { return <h1>{`${value.agent.name ?? "None"} - ${value.name}\n`}</h1> } )}
         </div>
     ) :
     

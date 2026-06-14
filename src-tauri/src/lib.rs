@@ -24,8 +24,10 @@ pub fn run() {
 
             pvp_commands::get_player_mmr,
             pvp_commands::get_current_pregame,
+            pvp_commands::get_current_game,
             
             asset_commands::get_playercard_by_id,
+            asset_commands::get_agent_by_id,
             
             henrik_commands::get_player_by_id
         ])

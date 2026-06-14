@@ -1,7 +1,7 @@
 use crate::riot_api::{
     clients::{
         asset_client::AssetClient,
-        pvp_models::{PregameMatch, PregamePlayer, MMR},
+        pvp_models::{Match, MatchPlayer, PregameMatch, PregamePlayer, MMR},
     },
     notify::NotifyStruct,
     response::{RequestError, RiotResponse},
@@ -99,7 +99,11 @@ impl PvPClient {
             .get_json::<MMR>()?;
         Ok(res)
     }
-    pub async fn get_pregame_match(&self, match_id: &str, skip: bool) -> Result<PregameMatch, RequestError> {
+    pub async fn get_pregame_match(
+        &self,
+        match_id: &str,
+        skip: bool,
+    ) -> Result<PregameMatch, RequestError> {
         let res = self
             .send_request(
                 format!("/pregame/v1/matches/{}", match_id).as_str(),
@@ -110,7 +114,11 @@ impl PvPClient {
             .get_json::<PregameMatch>()?;
         Ok(res)
     }
-    pub async fn get_pregame_player(&self, puuid: &str, skip: bool) -> Result<PregamePlayer, RequestError> {
+    pub async fn get_pregame_player(
+        &self,
+        puuid: &str,
+        skip: bool,
+    ) -> Result<PregamePlayer, RequestError> {
         let res = self
             .send_request(
                 format!("/pregame/v1/players/{}", puuid).as_str(),
@@ -121,15 +129,48 @@ impl PvPClient {
             .get_json::<PregamePlayer>()?;
         Ok(res)
     }
+    pub async fn get_match_data(
+        &self,
+        match_id: &str,
+        skip: bool,
+    ) -> Result<Match, RequestError> {
+        let res = self
+            .send_request(
+                format!("/core-game/v1/matches/{}", match_id).as_str(),
+                true,
+                skip,
+            )
+            .await?
+            .get_json::<Match>()?;
+        Ok(res)
+    }
+    pub async fn get_match_player(
+        &self,
+        puuid: &str,
+        skip: bool,
+    ) -> Result<MatchPlayer, RequestError> {
+        let res = self
+            .send_request(
+                format!("/core-game/v1/players/{}", puuid).as_str(),
+                true,
+                skip,
+            )
+            .await?
+            .get_json::<MatchPlayer>()?;
+        Ok(res)
+    }
+    pub async fn get_current_game(&self, skip: bool) -> Result<Match, RequestError> {
+        let puuid = { self.shared.get_user().clone().puuid };
+        let match_player = self.get_match_player(&puuid, skip).await?;
+        let match_data = self.get_match_data(match_player.match_i_d.as_str(), skip).await?;
+        Ok(match_data)
+    }
     pub async fn get_current_pregame(&self, skip: bool) -> Result<PregameMatch, RequestError> {
         let puuid = { self.shared.get_user().clone().puuid };
-        let pregame_player = self
-            .get_pregame_player(&puuid, skip)
-            .await?;
+        let pregame_player = self.get_pregame_player(&puuid, skip).await?;
         let pregame_match = self
             .get_pregame_match(pregame_player.match_i_d.as_str(), skip)
             .await?;
-         println!("{}", serde_json::to_string(&pregame_match).unwrap());
         Ok(pregame_match)
     }
     pub async fn build(&self) -> Result<(), RequestError> {

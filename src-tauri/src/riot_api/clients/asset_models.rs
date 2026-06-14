@@ -51,3 +51,38 @@ pub struct RiotVersion {
 /*
     End of RiotVersion
 */
+
+/*
+    Begin of Agent
+*/
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all="camelCase")]
+pub struct AgentData {
+    pub uuid: String,
+    pub display_name: String,
+    pub description: String,
+    pub developer_name: String,
+    pub release_date: String,
+    pub display_icon: String,
+    pub display_icon_small: String,
+    pub bust_portrait: Option<String>,
+    pub full_portrait: Option<String>,
+    pub full_portrait_v2: Option<String>,
+    pub killfeed_portrait: Option<String>,
+    pub minimap_portrait: Option<String>,
+    pub home_screen_promo_tile_image: Option<String>,
+    pub background: Option<String>,
+    pub is_full_portrait_right_facing: bool,
+    pub is_playable_character: bool,
+    pub is_available_for_test: bool,
+    pub is_base_content: bool
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Agent {
+    pub status: u32,
+    pub data: AgentData
+}
+/*
+    End of Agent
+*/

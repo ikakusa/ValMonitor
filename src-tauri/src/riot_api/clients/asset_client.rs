@@ -2,7 +2,7 @@ use reqwest::Client;
 use std::sync::OnceLock;
 
 use super::asset_models::{PlayerCard, RiotVersion};
-use crate::riot_api::response::{RequestError, RiotResponse};
+use crate::riot_api::{clients::asset_models::Agent, response::{RequestError, RiotResponse}};
 
 pub struct AssetClient;
 
@@ -59,6 +59,13 @@ impl AssetClient {
         let res = Self::send_rc_request("/version/latest")
             .await?
             .get_json::<RiotVersion>()?;
+        Ok(res)
+    }
+
+    pub async fn get_agent_by_id(id: &str) -> Result<Agent, RequestError> {
+        let res = Self::send_request(format!("/v1/agents/{}", id).as_str())
+            .await?
+            .get_json::<Agent>()?;
         Ok(res)
     }
 }

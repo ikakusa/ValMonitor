@@ -10,7 +10,7 @@ pub struct AccountData {
     pub card: String,
     pub title: String,
     pub platforms: Vec<String>,
-    pub updated_at: i64
+    pub updated_at: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]

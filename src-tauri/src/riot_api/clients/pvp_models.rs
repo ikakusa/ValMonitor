@@ -63,19 +63,11 @@ pub struct MMR {
 */
 
 /*
-    Begin of PregameMatch
+    Begin of PlayerIdentity
 */
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct PregameSeasonalBadgeInfo {
-    pub season_i_d: Option<String>,
-    pub number_of_wins: i32,
-    pub rank: i32,
-    pub leaderboard_rank: i32,
-}
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct PregamePlayerIdentity {
+pub struct PlayerIdentity {
     pub subject: String,
     pub player_card_i_d: String,
     pub player_title_i_d: String,
@@ -84,6 +76,28 @@ pub struct PregamePlayerIdentity {
     pub incognito: bool,
     pub hide_account_level: bool,
 }
+/*
+    End of PlayerIdentity
+*/
+
+/*
+    Begin of SeasonalBadgeInfo
+*/
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct SeasonalBadgeInfo {
+    pub season_i_d: Option<String>,
+    pub number_of_wins: i32,
+    pub rank: i32,
+    pub leaderboard_rank: i32,
+}
+/*
+    End of SeasonalBadgeInfo
+*/
+
+/*
+    Begin of PregameMatch
+*/
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct PregamePlayers {
@@ -91,8 +105,8 @@ pub struct PregamePlayers {
     pub character_i_d: String,
     pub character_selection_state: String,
     pub competitive_tier: i32,
-    pub player_identity: PregamePlayerIdentity,
-    pub seasonal_badge_info: PregameSeasonalBadgeInfo,
+    pub player_identity: PlayerIdentity,
+    pub seasonal_badge_info: SeasonalBadgeInfo,
     pub is_captain: bool,
 }
 #[derive(Debug, Deserialize, Serialize)]
@@ -138,12 +152,72 @@ pub struct PregameMatch {
     Begin of PregamePlayer
 */
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all="PascalCase")]
+#[serde(rename_all = "PascalCase")]
 pub struct PregamePlayer {
+    pub subject: String,
+    pub match_i_d: String,
+    pub version: i64,
+}
+/*
+    End of PregamePlayer
+*/
+
+/*
+    Begin of Match
+*/
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MatchConnectionDetails {
+    pub game_server_hosts: Vec<String>,
+    pub game_server_host: String,
+    pub game_server_port: i32,
+    pub game_server_obfuscated_i_p: i64,
+    pub game_client_hash: i64,
+    pub player_key: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MatchPlayerData {
+    pub subject: String,
+    pub team_i_d: String,
+    pub character_i_d: String,
+    pub player_identity: PlayerIdentity,
+    pub seasonal_badge_info: SeasonalBadgeInfo,
+    pub is_coach: bool,
+    pub is_associated: bool,
+}
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Match {
+    pub match_i_d: String,
+    pub version: i64,
+    pub map_i_d: String,
+    pub mode_i_d: String,
+    pub provisioning_flow: String,
+    pub game_pod_i_d: String,
+    pub all_m_u_c_name: String,
+    pub team_m_u_c_name: String,
+    pub team_voice_i_d: String,
+    pub team_match_token: String,
+    pub is_reconnectable: bool,
+    pub connection_details: MatchConnectionDetails,
+    pub players: Vec<MatchPlayerData>,
+}
+/*
+    End of Match
+*/
+
+/*
+    Begin of MatchPlayer
+*/
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MatchPlayer {
     pub subject: String,
     pub match_i_d: String,
     pub version: i64
 }
 /*
-    End of PregamePlayer
+    End of MatchPlayer
 */

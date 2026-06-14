@@ -1,5 +1,5 @@
 use crate::{
-    riot_api::clients::pvp_models::{PregameMatch, MMR},
+    riot_api::clients::pvp_models::{Match, PregameMatch, MMR},
     VALORANT_API,
 };
 
@@ -17,6 +17,15 @@ pub async fn get_current_pregame() -> Result<PregameMatch, String> {
     VALORANT_API
         .pvp_client
         .get_current_pregame(false)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_current_game() -> Result<Match, String> {
+    VALORANT_API
+        .pvp_client
+        .get_current_game(false)
         .await
         .map_err(|e| e.to_string())
 }
