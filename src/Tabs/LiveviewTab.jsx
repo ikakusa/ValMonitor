@@ -4,7 +4,7 @@ import "../App.css";
 import { AppContext } from "../AppContext";
 
 function LiveviewTab() {
-    const { appData, setAppData } = useContext(AppContext);
+    const { appData, setAppData, pregameData, setPregameData } = useContext(AppContext);
     const { userData, setUserData} = useState({
         agent: {
             name: null,
@@ -36,10 +36,11 @@ function LiveviewTab() {
          */
         skins: [],
     });
+    
     return ["INGAME", "PREGAME"].includes(appData.gamestate) ?
     (
         <div className="animate-[container-opacity-enter_0.5s_forwards]">
-            <h1>{appData.gamestate}</h1>
+            <h1>{appData.gamestate} {JSON.stringify(pregameData)}</h1>
         </div>
     ) :
     

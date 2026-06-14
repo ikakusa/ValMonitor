@@ -1,10 +1,7 @@
 use crate::riot_api::{
-    notify::NotifyStruct,
-    response::{RequestError, RiotResponse},
-    shared_data::SharedGameData,
+    clients::henrik_models::Account, notify::NotifyStruct, response::{RequestError, RiotResponse}, shared_data::SharedGameData
 };
 use reqwest::{header, Client};
-use serde_json::Value;
 use std::{
     fs,
     sync::{atomic::Ordering, Arc, Mutex},
@@ -39,7 +36,7 @@ impl HenrikClient {
             self.initialized_http.notifier.notified().await;
         }
         loop {
-            let client = self.client.lock().unwrap();
+            let client = { self.client.lock().unwrap().clone() };
             let res = client
                 .get(format!("https://api.henrikdev.xyz/valorant{}", path))
                 .send()
@@ -58,11 +55,11 @@ impl HenrikClient {
             });
         }
     }
-    pub async fn get_account_by_id(&self, puuid: &str) -> Result<Value, RequestError> {
+    pub async fn get_account_by_id(&self, puuid: &str) -> Result<Account, RequestError> {
         Ok(self
             .send_request(format!("/v2/by-puuid/account/{puuid}{}", puuid).as_str())
             .await?
-            .get_json::<Value>()?)
+            .get_json::<Account>()?)
     }
     pub async fn build(&self) -> Result<(), RequestError> {
         loop {
