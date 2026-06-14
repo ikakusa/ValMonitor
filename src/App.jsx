@@ -426,7 +426,7 @@ function App() {
         return () => {
             clearInterval(pregame_interval);
         }
-    }, [appData.gamestate, tick_gamedata]);
+    }, [appData.gamestate]);
 
     //いわんでもわかるだろ
     useEffect(() => {
