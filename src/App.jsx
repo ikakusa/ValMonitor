@@ -238,7 +238,8 @@ function App() {
                 setAppData(prev => {
                     if (prev.gamestate === json)
                         return prev;
-                    if (prev.gamestate !== "PREGAME" && json !== "INGAME")
+                    const isPregameToIngame = prev.gamestate === "PREGAME" && json === "INGAME";
+                    if (!isPregameToIngame)
                         setUserData({});
                     return { ...prev, gamestate: json };
                 });
