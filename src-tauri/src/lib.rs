@@ -29,7 +29,9 @@ pub fn run() {
             asset_commands::get_playercard_by_id,
             asset_commands::get_agent_by_id,
             
-            henrik_commands::get_player_by_id
+            henrik_commands::get_player_by_id,
+            henrik_commands::get_matchlist_by_puuid,
+            henrik_commands::get_stats_by_puuid
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

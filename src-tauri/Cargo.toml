@@ -31,4 +31,5 @@ thiserror = "2.0.18"
 directories = "6.0.0"
 fs = "0.0.5"
 tauri-plugin-fs = "2"
+arboard = "3.6.1"
 

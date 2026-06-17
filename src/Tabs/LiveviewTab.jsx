@@ -13,7 +13,7 @@ function LiveviewTab() {
     (
         <div className="animate-[container-opacity-enter_0.5s_forwards]">
             <h1>{appData.gamestate}</h1>
-            {Object.entries(userData).map(([key, value]) => { return <h1>{`${value.agent.name ?? "None"} - ${value.name}\n`}</h1> } )}
+            {Object.entries(userData).map(([key, value]) => { return <h1>Lv{value.account_level} KD{Math.trunc(value.stats.kdr * 100) / 100} {`${value.agent.name ?? "None"} - ${value.name}\n`}</h1> } )}
         </div>
     ) :
     

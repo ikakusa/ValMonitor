@@ -25,16 +25,33 @@ const defaultPlayer = {
         peak_icon: null
     },
     stats: {
-        match_count: null,
-        dmr: null,
-        kda: {
-            k: null,
-            d: null,
-            a: null
-        },
-        win_rate: null,
-        hs: null
+        avg_damage_round: 0.0,
+        avg_deaths: 0.0,
+        avg_kills: 0.0,
+        avg_score: 0.0,
+        bodyshot: 0,
+        bs_percent: 0.0,
+        deaths: 0,
+        headshot: 0,
+        hs_percent: 0.0,
+        kdr: 0.0,
+        kills: 0,
+        legshot: 0,
+        loses: 0,
+        ls_percent: 0.0,
+        matches: 0,
+        max_deaths: 0,
+        max_kills: 0,
+        min_deaths: 0,
+        min_kills: 0,
+        rounds_played: 0,
+        total_damage: 0,
+        total_score: 0,
+        total_shot: 0,
+        win_rate: 0.0,
+        wins: 0
     },
+    account_level: null,
     name: null,
     puuid: null,
     /**
@@ -82,28 +99,33 @@ function App() {
 
     //pregameとingame時にユーザーデータを取ります stats rank 名前 エージェント(lockedの場合)はキャッシュされて引き継がれます
     async function prepare_user_data() {
-        async function resolve_player_name(puuid, fallback) {
-            const info = await invoke("get_player_by_id", { id: puuid });
+        async function get_account_info(puuid) {
+            return await invoke("get_player_by_id", { id: puuid });
+        }
+        async function resolve_player_name(info, fallback) {
             return info.status === 200 ? `${info.data.name}#${info.data.tag}` : fallback;
+        }
+        async function resolve_account_level(info) {
+            return info.status === 200 ? info.data.account_level : 0;
         }
         async function update_user_data(default_data) {
             console.log(default_data);
             const puuid = default_data.puuid;
             setUserData(prev => {
                 const next = {
-                    ...(prev[puuid] || {}),
                     ...default_data,
+                    ...(prev[puuid] || {}),
                     agent: {
-                        ...(prev[puuid]?.agent || {}),
-                        ...default_data.agent
+                        ...default_data.agent,
+                        ...(prev[puuid]?.agent || {})
                     },
                     rank: {
-                        ...(prev[puuid]?.rank || {}),
-                        ...default_data.rank
+                        ...default_data.rank,
+                        ...(prev[puuid]?.rank || {})
                     },
                     stats: {
-                        ...(prev[puuid]?.stats || {}),
-                        ...default_data.stats
+                        ...default_data.stats,
+                        ...(prev[puuid]?.stats || {})
                     }
                 };
 
@@ -117,6 +139,23 @@ function App() {
                     [puuid]: next
                 };
             });
+        }
+        async function retrieve_data(default_data, cached_me) {
+            const is_henrik_need = !cached_me?.name || !cached_me?.account_level || !cached_me?.stats;
+            if (is_henrik_need) {
+                const info = await get_account_info(default_data.puuid);
+                console.log(info)
+                if (!cached_me?.name) {
+                    default_data.name = await resolve_player_name(info);
+                }
+                if (!cached_me?.account_level) {
+                    default_data.account_level = await resolve_account_level(info);
+                }
+                if (!cached_me?.stats) {
+                    const res = await invoke("get_stats_by_puuid", { id: default_data.puuid });
+                    default_data.stats = res;
+                }
+            }
         }
         async function handle_ingame() {
             const data = matchData["data"];
@@ -138,10 +177,7 @@ function App() {
                         locked: true
                     };
                 }
-                if (!cached_me?.name) {
-                    const player_info = await invoke("get_player_by_id", { id: player["Subject"] });
-                    default_data.name = resolve_player_name(agent_name);
-                }
+                await retrieve_data(default_data, cached_me);
                 update_user_data(default_data);
                 await sleep(api_wait_time);
             }
@@ -154,7 +190,7 @@ function App() {
                 const cached_me = userData ? userData[puuid] ?? null : null;
                 default_data.puuid = puuid;
                 default_data.agent = cached_me?.agent;
-                if (player["CharacterID"] && !default_data.agent.locked) {
+                if (player["CharacterID"] && !default_data.agent?.locked) {
                     const _agent_data = await invoke("get_agent_by_id", { id: player["CharacterID"] });
                     const agent_data = _agent_data["data"];
                     const agent_name = agent_data["displayName"] ?? "None";
@@ -165,11 +201,7 @@ function App() {
                         locked: player["CharacterSelectionState"] === "locked"
                     };
                 }
-                default_data.name = cached_me?.name;
-                if (!default_data.name) {
-                    const player_info = await invoke("get_player_by_id", { id: player["Subject"] });
-                    default_data.name = resolve_player_name(agent_name);
-                }
+                await retrieve_data(default_data, cached_me);
                 update_user_data(default_data);
                 await sleep(api_wait_time);
             }
@@ -179,16 +211,6 @@ function App() {
             case "PREGAME": await handle_pregame(); break
         }
     }
-
-    //PREGAME -> INGAME以外の場合にuserdataをリセット
-    useEffect(() => {
-        if (
-            appData.gamestate !== "PREGAME" &&
-            appData.gamestate !== "INGAME"
-        ) {
-            setUserData({});
-        }
-    }, [appData.gamestate]);
 
     //ページロード時にcontextmenuの無効化、各種ループの登録
     useEffect(() => {
@@ -216,6 +238,8 @@ function App() {
                 setAppData(prev => {
                     if (prev.gamestate === json)
                         return prev;
+                    if (prev.gamestate !== "PREGAME" && json !== "INGAME")
+                        setUserData({});
                     return { ...prev, gamestate: json };
                 });
             }).catch();
